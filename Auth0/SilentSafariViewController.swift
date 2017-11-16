@@ -40,10 +40,39 @@ class SilentSafariViewController: SFSafariViewController, SFSafariViewController
         self.onResult = callback
         self.delegate = self
         self.view.alpha = 0.05 // Apple does not allow invisible SafariViews, this is the threshold.
-        self.modalPresentationStyle = .overCurrentContext
+        self.modalPresentationStyle = .custom
+        self.transitioningDelegate = self
     }
 
     func safariViewController(_ controller: SFSafariViewController, didCompleteInitialLoad didLoadSuccessfully: Bool) {
         controller.dismiss(animated: false) { self.onResult(didLoadSuccessfully) }
+    }
+}
+
+extension SilentSafariViewController: UIViewControllerTransitioningDelegate {
+    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        return SilentSafariAnimatedTransitioning()
+    }
+}
+
+@objc class SilentSafariAnimatedTransitioning: NSObject, UIViewControllerAnimatedTransitioning {
+    func transitionDuration(using _: UIViewControllerContextTransitioning?) -> TimeInterval {
+        return 0.0
+    }
+
+    func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
+        let fromViewController = transitionContext.viewController(forKey: UITransitionContextViewControllerKey.from)
+        let fromView = fromViewController?.view
+
+        let toViewController = transitionContext.viewController(forKey: UITransitionContextViewControllerKey.to)
+        let toView = toViewController?.view
+
+        var toViewFrame = fromView?.frame
+        toViewFrame?.origin.y -= 64
+
+        let containerView = transitionContext.containerView
+        containerView.addSubview(toView!)
+        toView?.frame = toViewFrame!
+        transitionContext.completeTransition(true)
     }
 }
